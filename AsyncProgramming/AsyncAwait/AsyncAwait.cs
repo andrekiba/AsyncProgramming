@@ -1,10 +1,13 @@
 using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using Nito.AsyncEx;
 
 namespace AsyncAwait
@@ -12,6 +15,8 @@ namespace AsyncAwait
     [TestClass]
     public class AsyncAwait
     {
+	    const string Google = "http://www.google.it";
+
         #region Synchronization Context
 
         [TestMethod]
@@ -220,6 +225,9 @@ namespace AsyncAwait
             AsyncContext.Run(async () =>
             {
                 await Deadlock();
+
+                //var jsonTask = GetJsonAsync(Google);
+                //var result = jsonTask.Result;
             });
         }
 
@@ -237,6 +245,13 @@ namespace AsyncAwait
 
             //qui non ci arriva mai --> deadlock
             Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} rusultato: {result}");
+        }
+
+        static async Task<JObject> GetJsonAsync(string url)
+        {
+	        using var client = new HttpClient();
+	        var jsonString = await client.GetStringAsync(new Uri(url));
+	        return JObject.Parse(jsonString);
         }
 
         #endregion
@@ -398,6 +413,77 @@ namespace AsyncAwait
         }
 
         #endregion
+
+        #region Return a Task directly
+
+        [TestMethod]
+        public async Task ReturnATaskDirectly()
+        {
+	        var r1 = await GetStringAsync(Google);
+
+	        try
+	        {
+		        var r2 = await GetStringWithAsyncAwait1(Google);
+
+		        //var r3 = await GetStringWithoutAsyncAwait1(google);
+
+		        //var task1 = GetStringWithAsyncAwait2();
+		        //var r4 = await task1; //exception thrown here
+
+		        var task2 = GetStringWithoutAsyncAwait2(); //excetpion thrown here
+		        var r5 = await task2;
+            }
+	        catch (Exception e)
+	        {
+		        Debug.WriteLine(e);
+	        }
+        }
+
+        //OK perchè di fatto è soltanto passthrough
+        static Task<string> GetStringAsync(string url)
+        {
+            var client = new HttpClient();
+            return client.GetStringAsync(url);
+        }
+        
+        //se invece ho altro codice devo stare attento
+        //ad esempio nel caso in cui utilizzo uno "using"
+        static async Task<string> GetStringWithAsyncAwait1(string url)
+        {
+	        using var client = new HttpClient();
+	        return await client.GetStringAsync(url);
+        }
+
+        static Task<string> GetStringWithoutAsyncAwait1(string url)
+        {
+	        using var client = new HttpClient();
+	        return client.GetStringAsync(url);
+        }
+
+        //oppure se c'è codice che può generare eccezioni
+        public async Task<string> GetStringWithAsyncAwait2()
+        {
+	        var client = new HttpClient();
+            const string url = Google;
+	        //codice che potrebbe causare eccezione
+	        if(url.EndsWith("it"))
+				throw new InvalidOperationException("ciao!");
+	        
+	        return await client.GetStringAsync(url);
+        }
+
+        public Task<string> GetStringWithoutAsyncAwait2()
+        {
+	        var client = new HttpClient();
+	        const string url = Google;
+	        //codice che potrebbe causare eccezione
+	        if (url.EndsWith("it"))
+		        throw new InvalidOperationException("ciao!");
+            
+	        return client.GetStringAsync(url);
+        }
+
+        #endregion 
 
         #region Guidelines
 
