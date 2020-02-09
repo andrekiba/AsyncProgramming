@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,13 +22,13 @@ namespace AsyncAwait
         #region Synchronization Context
 
         [TestMethod]
-        public void WithSyncContext()
+        public void TestWithSyncContext()
         {
 	        AsyncContext.Run(Run);
         }
 
         [TestMethod]
-        public async Task WithoutSyncContext()
+        public async Task TestWithoutSyncContext()
         {
 	        await Run();
         }
@@ -66,6 +68,81 @@ namespace AsyncAwait
 
         #endregion
 
+        #region Pausing - Retry
+
+        [TestMethod]
+        public async Task TestPausingRetry()
+        {
+	        (await DelayResult("ciao!", TimeSpan.FromSeconds(1))).Output();
+
+	        (await DownloadStringWithRetries(new HttpClient(), Google)).Output();
+	        (await DownloadStringWithTimeout(new HttpClient(), Google)).Output();
+        }
+
+        static async Task<T> DelayResult<T>(T result, TimeSpan delay)
+        {
+	        await Task.Delay(delay);
+	        return result;
+        }
+
+        static async Task<string> DownloadStringWithRetries(HttpClient client, string uri)
+        {
+	        // riprova dopo 1, 2, 4 secondi
+	        var nextDelay = TimeSpan.FromSeconds(1);
+	        for (var i = 0; i != 3; ++i)
+	        {
+		        try
+		        {
+			        return await client.GetStringAsync(uri);
+		        }
+		        catch
+		        {
+			        // se va in eccezione attende e riproverà
+		        }
+
+		        await Task.Delay(nextDelay);
+		        nextDelay += nextDelay;
+	        }
+
+	        // riprova un'ultima volta, se va in eccezione viene salvata nel task e propagata
+	        return await client.GetStringAsync(uri);
+        }
+
+        //utile nel caso ci fosse un metodo che non supporta cancellation
+        static async Task<string> DownloadStringWithTimeout(HttpClient client, string uri)
+        {
+	        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+	        var downloadTask = client.GetStringAsync(uri);
+	        
+            //timespan ifinito e cancellation token per creare un task
+            //che verrà cancellato (set canceled) dopo il tempo desiderato
+	        var timeoutTask = Task.Delay(Timeout.InfiniteTimeSpan, cts.Token);
+
+	        var completedTask = await Task.WhenAny(downloadTask, timeoutTask);
+	        
+	        if (completedTask == timeoutTask)
+		        return null;
+	        
+	        return await downloadTask;
+        }
+
+        #region DelayImplementation
+
+        static Task Delay(int milliseconds)
+        {
+	        var tcs = new TaskCompletionSource<object>();
+
+	        var timer = new Timer(x => tcs.SetResult(null), null, milliseconds, Timeout.Infinite);
+
+	        tcs.Task.ContinueWith(x => timer.Dispose());
+
+	        return tcs.Task;
+        }
+
+        #endregion
+
+        #endregion 
+
         #region CPU-bound
 
         [TestMethod]
@@ -76,35 +153,16 @@ namespace AsyncAwait
 
             //è corretto utilizzare Task.Run solo per operazioni CPU-bound poichè utilizza un thread
             await Task.Run(() => CpuBoundMethod(100));
-            await Task.Factory.StartNew(() => CpuBoundMethod(101));
+            
+            await Task.Factory.StartNew(() => CpuBoundMethod(101), 
+	            CancellationToken.None, 
+	            TaskCreationOptions.DenyChildAttach,
+	            TaskScheduler.Default);
         }
 
         static void CpuBoundMethod(int n)
         {
             Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} scrivo {n}");
-        }
-
-        #endregion
-
-        #region Sequential - Concurrent
-
-        [TestMethod]
-        public async Task Sequential()
-        {
-            var sequential = Enumerable.Range(1, 4).Select(t => Task.Delay(TimeSpan.FromSeconds(1)));
-
-            foreach (var task in sequential)
-            {
-                await task;
-            }
-        }
-
-        [TestMethod]
-        public async Task Concurrent()
-        {
-            var concurrent = Enumerable.Range(1, 4).Select(t => Task.Delay(TimeSpan.FromSeconds(1)));
-            await Task.WhenAll(concurrent);
-            //await Task.WhenAny(concurrent);
         }
 
         #endregion
@@ -115,25 +173,25 @@ namespace AsyncAwait
         public void TestDoSomethingAsync()
         {
 	        AsyncContext.Run(async () =>
-            {
-                var t = DoSomethingAsync();
+	        {
+		        var t = DoSomethingAsync();
 
-                Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} libero di fare altro nel frattempo!");
+		        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} libero di fare altro nel frattempo!");
 
-                var result = await t;
+		        var result = await t;
 
-                Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} risultato finale: {result}");
-            });
+		        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} risultato finale: {result}");
+	        });
         }
 
         [TestMethod]
         public async Task TestIoBound()
         {
-            Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} start IoBoundMethod");
+	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} start IoBoundMethod");
 
-            await IoBoundMethod();
+	        await IoBoundMethod();
 
-            Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} end IoBoundMethod");
+	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} end IoBoundMethod");
         }
 
         static async Task IoBoundMethod()
@@ -143,6 +201,31 @@ namespace AsyncAwait
 	        await writer.WriteLineAsync("Scrivo 6 in asincrono!");
 	        writer.Close();
 	        stream.Close();
+        }
+
+        #endregion
+
+        #region Sequential - Concurrent
+
+        [TestMethod]
+        public async Task TestSequential()
+        {
+            var sequential = Enumerable.Range(1, 4).Select(t => Task.Delay(TimeSpan.FromSeconds(1)));
+
+            foreach (var task in sequential)
+            {
+                await task;
+            }
+        }
+
+        [TestMethod]
+        public async Task TestConcurrent()
+        {
+            var concurrent = Enumerable.Range(1, 4).Select(t => Task.Delay(TimeSpan.FromSeconds(1)));
+            
+            await Task.WhenAll(concurrent);
+            
+            //await Task.WhenAny(concurrent);
         }
 
         #endregion
@@ -304,11 +387,101 @@ namespace AsyncAwait
 
         #endregion
 
+        #region Completed Task
+
+        [TestMethod]
+        public async Task TestAlreadyCompleted()
+        {
+            var mySyncImpl = new MySynchronousImplementation();
+            
+            (await mySyncImpl.GetValueAsync()).Output();
+            
+            await mySyncImpl.DoAsync();
+
+            try
+            {
+	            await mySyncImpl.NotImplementedAsync<NotImplementedException>();
+            }
+            catch (NotImplementedException e)
+            {
+	            e.Output();
+            }
+
+            try
+            {
+	            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+	            cts.Cancel();
+	            (await mySyncImpl.GetValueCanceledAsync(cts.Token)).Output();
+            }
+            catch (TaskCanceledException e)
+            {
+	            e.Output();
+            }
+        }
+
+        interface IMyAsyncInterface
+        {
+	        Task<int> GetValueAsync();
+	        Task DoAsync();
+	        Task<T> NotImplementedAsync<T>();
+	        Task<int> GetValueCanceledAsync(CancellationToken ct = default);
+        }
+
+        class MySynchronousImplementation : IMyAsyncInterface
+        {
+	        public Task<int> GetValueAsync()
+	        {
+		        return Task.FromResult(42);
+	        }
+
+	        public Task DoAsync()
+	        {
+		        return Task.CompletedTask;
+	        }
+
+	        public Task<T> NotImplementedAsync<T>()
+	        {
+		        return Task.FromException<T>(new NotImplementedException());
+	        }
+
+	        public Task<int> GetValueCanceledAsync(CancellationToken ct)
+	        {
+		        return ct.IsCancellationRequested ? Task.FromCanceled<int>(ct) : Task.FromResult(16);
+	        }
+        }
+
+
+        #endregion
+
+        #region Caching
+
+        static readonly Task<int> zeroTask = Task.FromResult(0);
+
+        public Task<int> GetValueAsync()
+        {
+	        return zeroTask;
+        }
+
+        [TestMethod]
+        public Task TestCaching()
+        {
+	        return GetValueAsync();
+        }
+
+        #endregion 
+
         #region Composition
+
+        public async Task TestComposition()
+        {
+	        await DoOperationsConcurrentlyAsync();
+	        await DownloadAllAsync(new HttpClient(), new List<string>{ Google, "www.facebook.com"});
+	        await GetFirstToRespondAsync();
+        }
 
         public async Task DoOperationsConcurrentlyAsync()
         {
-            var tasks = new Task[3];
+            var tasks = new Task<int>[3];
             tasks[0] = DoSomethingAsync();
             tasks[1] = DoSomethingAsync();
             tasks[2] = DoSomethingAsync();
@@ -316,12 +489,29 @@ namespace AsyncAwait
             // a questo punto tutti e 3 i task sono in running
 
             // WhenAll reswtituisce un task che diventa completo quando tutti i task sottesi sono completi
-            await Task.WhenAll(tasks);
+            // se i task ritornano tutti lo stesso tipo e nessuno fallisce il risultato sarà un array
+            var result = await Task.WhenAll(tasks);
+            result.Output();
         }
 
+        static async Task<string> DownloadAllAsync(HttpClient client, IEnumerable<string> urls)
+        {
+	        var downloads = urls.Select(client.GetStringAsync);
+	        // nessun task è ancora iniziato perchè la sequenza non è ancora stata valutata (lazy)
+
+	        // tutti i download partono contemporaneamente
+	        Task<string>[] downloadTasks = downloads.ToArray();
+	        // adesso tutti i task sono partiti
+
+	        // attesa asincrona di tutti quinti
+	        string[] htmlPages = await Task.WhenAll(downloadTasks);
+
+	        return string.Concat(htmlPages);
+        }
+        
         public async Task<int> GetFirstToRespondAsync()
         {
-            // chiama due web service e vede chi risponde prima
+            // ad esempio chiama due web service e vede chi risponde prima
             Task<int>[] tasks = { DoSomethingAsync(), DoSomethingAsync() };
 
             // attende il primo che risponde
@@ -346,13 +536,16 @@ namespace AsyncAwait
 
         static async Task ReportProgressAsync()
         {
-            //attenzione che il report può avvenire in asincrono quindi è meglio utilizzare un value type o un tipo immutabile
+            //attenzione che il report può avvenire in asincrono (mentre il metodo principale continua l'esecuzione)
+            //quindi è meglio utilizzare un tipo immutabile o almeno value type
             //come parametro T per evitare che il valore venga modificato dalla continuazione del metodo in asincrono  
-            var progress = new Progress<int>();
+            var progress = new Progress<int>(); //implementa IProgress<T>
             progress.ProgressChanged += (sender, p) =>
             {
-                //N.B.: la callback cattura il contesto, sappiamo che quando viene costrutita in questo caso il contesto è quello
+                //N.B.: la callback cattura il contesto
+                //sappiamo che quando viene costrutita in questo caso il contesto è quello
                 //del Main thread quindi è possibile aggiornare l'interfaccia senza incorrere in problemi
+                //anche se il nostro metodo asincrono invoca la callback di report da un thread di background
                 Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} report progress: {p}");
             };
 
@@ -483,7 +676,7 @@ namespace AsyncAwait
 	        return client.GetStringAsync(url);
         }
 
-        #endregion 
+        #endregion
 
         #region Guidelines
 
@@ -535,19 +728,56 @@ namespace AsyncAwait
 
         #endregion
 
-        #region DelayImplementation
+        #region TaskCompletionSource
 
-        static Task Delay(int milliseconds)
+        [TestMethod]
+        public async Task TestTaskCompletionSource()
         {
-            var tcs = new TaskCompletionSource<object>();
+            var service = new MyAsyncHttpService();
+            var result = await service.DownloadStringAsync(new Uri(Google));
+            result.Output();
+        }
 
-            var timer = new Timer(x => tcs.SetResult(null), null, milliseconds, Timeout.Infinite);
+        public interface IMyAsyncHttpService
+        {
+	        void DownloadString(Uri address, Action<string, Exception> callback);
+        }
 
-            tcs.Task.ContinueWith(x => timer.Dispose());
-
-            return tcs.Task;
+        public class MyAsyncHttpService : IMyAsyncHttpService
+        {
+            public void DownloadString(Uri address, Action<string, Exception> callback)
+            {
+	            using var webClient = new WebClient();
+	            try
+	            {
+		            var result = webClient.DownloadString(address);
+		            callback(result, null);
+	            }
+	            catch (Exception e)
+	            {
+		            callback(null, e);
+	            }
+            }
         }
 
         #endregion
+    }
+
+    internal static class MyAsyncHttpServiceExtensions
+    {
+	    public static Task<string> DownloadStringAsync(this AsyncAwait.IMyAsyncHttpService httpService, Uri address)
+	    {
+		    var tcs = new TaskCompletionSource<string>();
+
+		    httpService.DownloadString(address, (result, exception) =>
+		    {
+			    if (exception != null)
+				    tcs.TrySetException(exception);
+			    else
+				    tcs.TrySetResult(result);
+		    });
+
+		    return tcs.Task;
+	    }
     }
 }
