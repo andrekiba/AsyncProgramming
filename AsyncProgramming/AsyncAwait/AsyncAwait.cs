@@ -840,6 +840,46 @@ namespace AsyncAwait
                     cancellationToken.ThrowIfCancellationRequested();
             }
         }
+        
+        [TestMethod]
+        public async Task TestCancellationRequest()
+        {
+	        await IssueCancelRequestAsync();
+        }
+
+        async Task IssueCancelRequestAsync()
+        {
+	        using var cts = new CancellationTokenSource();
+	        var task = CancelableMethodAsync(cts.Token);
+            //a questo punto l'operazione è partita
+
+	        //triggero la cancellazione, nella realtà sarebbe un'altro punto del codice con un altro metodo
+            //quando una CancellationTokenSource viene cancellata lo è per sempre
+            //se ne ho bisogno un'altra occorre creare una nuova istanza
+	        cts.Cancel();
+
+	        //attende in asincrono che l'operazione finisca
+	        try
+	        {
+		        await task;
+                //se arrivo qui l'operazione è stata completata con successo
+                //prima che la cancellazione possa intervenire
+	        }
+	        catch (OperationCanceledException)
+	        {
+		        //se arrivo qui l'operazione è stata cancellata prima di finire
+	        }
+	        catch (Exception)
+	        {
+		        //se arrivo qui l'operazione è fallita per un altro motivo
+		        throw;
+	        }
+        }
+
+        async Task CancelableMethodAsync(CancellationToken token)
+        {
+	        await Task.Delay(TimeSpan.FromSeconds(1), token);
+        }
 
         #endregion
 
