@@ -23,7 +23,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HackerNews.Droid", "AsyncAw
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "APM_EAP", "APM_EAP\APM_EAP.csproj", "{FFF9A802-1FA7-4283-ABD1-2823E5BF6256}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncOOP", "AsyncOOP\AsyncOOP.csproj", "{B411FBFC-DD41-48DD-8A6F-A4238D7942F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncOOP", "AsyncOOP\AsyncOOP.csproj", "{B411FBFC-DD41-48DD-8A6F-A4238D7942F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPL", "TPL\TPL.csproj", "{8AF548EC-AA45-4910-86D4-FF5755B7ED89}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -150,6 +152,18 @@ Global
 		{B411FBFC-DD41-48DD-8A6F-A4238D7942F6}.Release|iPhone.Build.0 = Release|Any CPU
 		{B411FBFC-DD41-48DD-8A6F-A4238D7942F6}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{B411FBFC-DD41-48DD-8A6F-A4238D7942F6}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhone.Build.0 = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

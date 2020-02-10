@@ -248,6 +248,11 @@ namespace AsyncAwait
         public async Task TestTrySomethingAsync()
         {
             await TrySomethingAsync();
+
+            //è possibile utilizzare Assert.ThrowsExceptionAsync per testare che un metodo effettivamente sollevi eccezione
+            //questo approcio è decisamente meglio di ExpectedException perchè so quel'è l'azione che deve sollevare eccezione
+            //N.B. attenzione che Assert va awaitato perchè propaga eventuali errori sull'assert
+            await Assert.ThrowsExceptionAsync<NotImplementedException>(async () => await ThrowExceptionAsync(), "Eccezione!");
         }
 
         static async Task TrySomethingAsync()
@@ -792,6 +797,14 @@ namespace AsyncAwait
         #endregion
 
         #region Cancellation
+        //la cancellazione è cooperativa quindi significa che un metodo può essere cancellato
+        //solo se la sua implementazione lo supporta tramite passaggio di un cancellation token
+        
+        //esiste una fonte che triggera la cancellazione: CancellationTokenSource
+        //esiste il destinatario che viene cancellato: CancellationToken
+        
+        //il codice cancellato per convenzione solleva OperationCanceledException o una sua derivata
+        //in questo modo il codice che ha richiesto la cancellazione può conoscere che è effettivamente stata eseguita
 
         [TestMethod]
         public async Task TestCancellation()
