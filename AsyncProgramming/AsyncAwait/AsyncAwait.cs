@@ -472,12 +472,17 @@ namespace AsyncAwait
 
         #region Composition
 
+        [TestMethod]
         public async Task TestComposition()
         {
-	        await DoOperationsConcurrentlyAsync();
-	        await DownloadAllAsync(new HttpClient(), new List<string>{ Google, "www.facebook.com"});
-	        await GetFirstToRespondAsync();
+	        //await DoOperationsConcurrentlyAsync();
+	        //await DownloadAllAsync(new HttpClient(), new List<string>{ Google, "www.facebook.com"});
+	        //await GetFirstToRespondAsync();
+	        await GetFirstToRespondMaybeFaultedAsync();
+            //await ObserveAllExceptionsAsync();
         }
+
+        #region All
 
         public async Task DoOperationsConcurrentlyAsync()
         {
@@ -490,6 +495,7 @@ namespace AsyncAwait
 
             // WhenAll reswtituisce un task che diventa completo quando tutti i task sottesi sono completi
             // se i task ritornano tutti lo stesso tipo e nessuno fallisce il risultato sarà un array
+            // se anche uno solo fallisce task conterrà l'eccezione
             var result = await Task.WhenAll(tasks);
             result.Output();
         }
@@ -503,12 +509,16 @@ namespace AsyncAwait
 	        Task<string>[] downloadTasks = downloads.ToArray();
 	        // adesso tutti i task sono partiti
 
-	        // attesa asincrona di tutti quinti
+	        // attesa asincrona di tutti quanti
 	        string[] htmlPages = await Task.WhenAll(downloadTasks);
 
 	        return string.Concat(htmlPages);
         }
-        
+
+        #endregion 
+
+        #region Any
+
         public async Task<int> GetFirstToRespondAsync()
         {
             // ad esempio chiama due web service e vede chi risponde prima
@@ -520,6 +530,161 @@ namespace AsyncAwait
             // Return the result.
             return await firstTask;
         }
+
+        //il task ritornato da Task.WhenAny non viene mai completato in stato faulted o canceled
+        //completa sempre con successo e il risultato è il task interno che completa per primo
+        //se il task interno non completa con successo l'eccezione non viene propagata al task esterno
+        //se si vuole osservare l'eccezione è necessario awaitare il task interno dopo il suo completamento
+
+        //inoltre occorre considerare che anche quando il primo task completa
+        //gli altri vanno cmq avanti nell'esecuzione e sarebbe quindi buona norma cancellarli
+        //altriementi a loro volta verranno completati e abbandonati
+        public async Task GetFirstToRespondMaybeFaultedAsync()
+        {
+	        var maybeFoultedTasks = new Task<int>[3];
+	        maybeFoultedTasks[0] = DoSomethingAsync();
+	        maybeFoultedTasks[1] = ThrowNotImplementedExceptionAsync();
+	        maybeFoultedTasks[2] = ThrowInvalidOperationExceptionAsync();
+
+	        // attende il primo che risponde
+	        var firstTask = await Task.WhenAny(maybeFoultedTasks);
+
+	        try
+	        {
+		        await firstTask;
+            }
+	        catch (Exception e)
+	        {
+		        e.Output();
+	        }
+        }
+
+        #endregion 
+
+        #region Exception
+
+        //mettere l'async in questo caso è importante perchè in questo modo l'eccezione verrà
+        //messa all'interno del task (che completerà quindi in stato faulted) e non sollevata direttamente
+        //verrà valutata quando il taks verrà awaitato
+        static async Task<int> ThrowNotImplementedExceptionAsync()
+        {
+	        throw new NotImplementedException();
+        }
+        static async Task<int> ThrowInvalidOperationExceptionAsync()
+        {
+	        throw new InvalidOperationException();
+        }
+
+        async Task ObserveOneExceptionAsync()
+        {
+	        var task1 = ThrowNotImplementedExceptionAsync();
+	        var task2 = ThrowInvalidOperationExceptionAsync();
+
+	        try
+	        {
+		        await Task.WhenAll(task1, task2);
+	        }
+	        catch (Exception ex)
+	        {
+		        // "ex" può essere NotImplementedException oppure InvalidOperationException
+                ex.GetType().Output();
+	        }
+        }
+
+        async Task ObserveAllExceptionsAsync()
+        {
+	        var task1 = ThrowNotImplementedExceptionAsync();
+	        var task2 = ThrowInvalidOperationExceptionAsync();
+
+	        Task allTasks = Task.WhenAll(task1, task2);
+	        try
+	        {
+		        await allTasks;
+	        }
+	        catch
+	        {
+		        AggregateException allExceptions = allTasks.Exception;
+                allExceptions.InnerExceptions.ToList().ForEach(e => e.Output());
+	        }
+        }
+
+        #endregion
+
+        #region Process as they complete
+
+        async Task<int> DelayAndReturnAsync(int value)
+        {
+	        await Task.Delay(TimeSpan.FromSeconds(value));
+	        return value;
+        }
+
+        //processati in ordine indipendentemente dall'ordine di completamento
+        async Task ProcessTasksInOrderAsync()
+        {
+	        var taskA = DelayAndReturnAsync(2);
+	        var taskB = DelayAndReturnAsync(3);
+	        var taskC = DelayAndReturnAsync(1);
+	        Task<int>[] tasks = { taskA, taskB, taskC };
+
+	        // Await di ogni task in ordine
+	        foreach (var task in tasks)
+	        {
+		        var result = await task;
+		        result.Output();
+	        }
+        }
+
+        //processati in ordine di completamento
+        //rispetto alla soluzione precedente è molto differente perchè in questo caso
+        //i task vengono processati in modo concorrente e non uno alla volta
+        async Task ProcessTasksByCompletionAsync()
+        {
+            // Create a sequence of tasks.
+            var taskA = DelayAndReturnAsync(2);
+            var taskB = DelayAndReturnAsync(3);
+            var taskC = DelayAndReturnAsync(1);
+            Task<int>[] tasks = {taskA, taskB, taskC};
+
+	        var taskQuery = from t in tasks select AwaitAndProcessAsync(t);
+	        var processingTasks = taskQuery.ToArray();
+
+			//Task[] processingTasks = tasks.Select(async t =>
+			//{
+			//    var result = await t;
+			//    result.Output();
+			//}).ToArray();
+
+	        // Await all processing to complete
+	        await Task.WhenAll(processingTasks);
+        }
+
+        //mi serve un metodo che possa awaitare il singolo task e processarlo
+        static async Task AwaitAndProcessAsync(Task<int> task)
+        {
+	        var result = await task;
+	        result.Output();
+        }
+
+        //se si vuole evitare di processare i task in modo concorrente (perchè ad esempio agiscono su di un oggetto condiviso)
+        //è possibile utilizzare un lock asincrono implementato tramite SemaphoreSlim
+        //oppure in Nito.AsyncEx esiste un extension method che ordina per completamento (utilizza TaskCompletionSource)
+        async Task UseOrderByCompletionAsync()
+        {
+            // Create a sequence of tasks.
+            var taskA = DelayAndReturnAsync(2);
+            var taskB = DelayAndReturnAsync(3);
+            var taskC = DelayAndReturnAsync(1);
+            var tasks = new[] {taskA, taskB, taskC};
+
+	        // Await each one as they complete.
+	        foreach (var task in tasks.OrderByCompletion())
+	        {
+		        var result = await task;
+		        result.Output();
+	        }
+        }
+
+        #endregion 
 
         #endregion
 
@@ -607,10 +772,10 @@ namespace AsyncAwait
 
         #endregion
 
-        #region Return a Task directly
+        #region Directly return a Task
 
         [TestMethod]
-        public async Task ReturnATaskDirectly()
+        public async Task TestDirectlyReturnATask()
         {
 	        var r1 = await GetStringAsync(Google);
 
