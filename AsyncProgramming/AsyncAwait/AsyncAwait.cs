@@ -806,6 +806,10 @@ namespace AsyncAwait
         //il codice cancellato per convenzione solleva OperationCanceledException o una sua derivata
         //in questo modo il codice che ha richiesto la cancellazione può conoscere che è effettivamente stata eseguita
 
+        //non è garantito che il codice venga effettivamente cancellato
+        //l'azione potrebbe già essere iniziata e terminare con successo (o con eccezione)
+        //prima che la cancellazione venga onorata
+
         [TestMethod]
         public async Task TestCancellation()
         {
@@ -814,9 +818,9 @@ namespace AsyncAwait
 
         static async Task Cancellation()
         {
-            var source = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-           //source.CancelAfter(TimeSpan.FromSeconds(2));
-            var task = Task.Run(() => SlowMethod(source.Token), source.Token);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+           //cts.CancelAfter(TimeSpan.FromSeconds(2));
+            var task = Task.Run(() => SlowMethod(cts.Token), cts.Token);
 
             try
             {
