@@ -1081,6 +1081,40 @@ namespace AsyncAwait
         }
 
         #endregion
+
+        #region Async Lock
+
+        [TestMethod]
+        public async Task TestAsyncLock()
+        {
+	        var asyncLock = new AsyncLock();
+	        await asyncLock.DelayAndIncrementAsync();
+        }
+
+        internal class AsyncLock
+	    {
+            //protegge il field value
+		    readonly SemaphoreSlim mutex = new SemaphoreSlim(1);
+
+	        int value;
+
+	        public async Task DelayAndIncrementAsync()
+	        {
+		        await mutex.WaitAsync();
+		        try
+		        {
+			        var oldValue = value;
+			        await Task.Delay(TimeSpan.FromSeconds(oldValue));
+			        value = oldValue + 1;
+		        }
+		        finally
+		        {
+			        mutex.Release();
+		        }
+	        }
+        } 
+
+        #endregion
     }
 
     internal static class MyAsyncHttpServiceExtensions
