@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,7 +7,6 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncAwaitBestPractices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using Nito.AsyncEx;
@@ -46,7 +44,7 @@ namespace AsyncAwait
 	        
 	        var result = await t;
 	        
-	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} il risultato Ë {result}");
+	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} il risultato √® {result}");
 
 	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} end");
         }
@@ -98,7 +96,7 @@ namespace AsyncAwait
 		        }
 		        catch
 		        {
-			        // se va in eccezione attende e riprover‡
+			        // se va in eccezione attende e riprover√†
 		        }
 
 		        await Task.Delay(nextDelay);
@@ -116,7 +114,7 @@ namespace AsyncAwait
 	        var downloadTask = client.GetStringAsync(uri);
 	        
             //timespan ifinito e cancellation token per creare un task
-            //che verr‡ cancellato (set canceled) dopo il tempo desiderato
+            //che verr√† cancellato (set canceled) dopo il tempo desiderato
 	        var timeoutTask = Task.Delay(Timeout.InfiniteTimeSpan, cts.Token);
 
 	        var completedTask = await Task.WhenAny(downloadTask, timeoutTask);
@@ -149,10 +147,10 @@ namespace AsyncAwait
         [TestMethod]
         public async Task TestCpuBound()
         {
-            //esegue il metodo in parallelo su pi˘ thread
+            //esegue il metodo in parallelo su pi√π thread
             Parallel.ForEach(Enumerable.Range(1, 100), CpuBoundMethod);
 
-            //Ë corretto utilizzare Task.Run solo per operazioni CPU-bound poichË utilizza un thread
+            //√® corretto utilizzare Task.Run solo per operazioni CPU-bound poich√® utilizza un thread
             await Task.Run(() => CpuBoundMethod(100));
             
             await Task.Factory.StartNew(() => CpuBoundMethod(101), 
@@ -234,24 +232,24 @@ namespace AsyncAwait
         #region Async Exception
 
         //le eccezioni sollevate in un metodo marcato come async Task vengono catturate
-        //e messe nel task stesso e vengono sollevate solo quando il task in questione verr‡ awaitato
+        //e messe nel task stesso e vengono sollevate solo quando il task in questione verr√† awaitato
         //quando questo accade la prima eccezione contenuta nel task viene ri-sollevata e il suo stack trace
-        //preservato completamente (non c'Ë il problema del re-throw a cui siamo abituati)
+        //preservato completamente (non c'√® il problema del re-throw a cui siamo abituati)
 
         //N.B. in caso di Task.WhenAll solo la prima eventuale eccezione viene sollevata
 
-        //N.B. attenzione che non Ë cosÏ se il metodo ritorna Task ma non Ë marcato con async!
+        //N.B. attenzione che non √® cos√¨ se il metodo ritorna Task ma non √® marcato con async!
 
-        //N.B. attenzione che non Ë cosÏ se il metodo Ë "async void" perchË non esiste alcun task!!
+        //N.B. attenzione che non √® cos√¨ se il metodo √® "async void" perch√® non esiste alcun task!!
 
         [TestMethod]
         public async Task TestTrySomethingAsync()
         {
             await TrySomethingAsync();
 
-            //Ë possibile utilizzare Assert.ThrowsExceptionAsync per testare che un metodo effettivamente sollevi eccezione
-            //questo approcio Ë decisamente meglio di ExpectedException perchË so quel'Ë l'azione che deve sollevare eccezione
-            //N.B. attenzione che Assert va awaitato perchË propaga eventuali errori sull'assert
+            //√® possibile utilizzare Assert.ThrowsExceptionAsync per testare che un metodo effettivamente sollevi eccezione
+            //questo approcio √® decisamente meglio di ExpectedException perch√® so quel'√® l'azione che deve sollevare eccezione
+            //N.B. attenzione che Assert va awaitato perch√® propaga eventuali errori sull'assert
             await Assert.ThrowsExceptionAsync<NotImplementedException>(async () => await ThrowExceptionAsync(), "Eccezione!");
         }
 
@@ -280,14 +278,14 @@ namespace AsyncAwait
 
         #region Async Void
 
-        //se vogliamo essere sicuri di catchare un'eccezione in un metodo async void non c'Ë una buona soluzione!
-        //se possibile la cosa giusta da fare Ë cambiare la firma in async Task
+        //se vogliamo essere sicuri di catchare un'eccezione in un metodo async void non c'√® una buona soluzione!
+        //se possibile la cosa giusta da fare √® cambiare la firma in async Task
 
-        //questo non Ë sempre possibile tipo negli ICommand o negli event handler 
-        //in questo cosa la via migliore Ë usare qualcosa tipo SafeFireAndForget
+        //questo non √® sempre possibile tipo negli ICommand o negli event handler 
+        //in questo cosa la via migliore √® usare qualcosa tipo SafeFireAndForget
         
-        //se occorre testare un metodo async void Ë meglio scrivere tutto il codice in un metodo async Task e testare quello
-        //poi qeusto metodo costruito ad-hoc verr‡ richiamato dal metodo async void
+        //se occorre testare un metodo async void √® meglio scrivere tutto il codice in un metodo async Task e testare quello
+        //poi qeusto metodo costruito ad-hoc verr√† richiamato dal metodo async void
 
         [TestMethod]
         public async Task TestAsyncVoid()
@@ -301,8 +299,8 @@ namespace AsyncAwait
                 
 		        //UseAsyncTask().SafeFireAndForget(e =>
                 //{
-	                //poichË Ë fire and forget il test termina prima di vedere questo messaggio!
-                    //ma in questo modo l'eccezione non Ë persa per sempre in un codice realistico
+	                //poich√® √® fire and forget il test termina prima di vedere questo messaggio!
+                    //ma in questo modo l'eccezione non √® persa per sempre in un codice realistico
 	            //    e.Message.Output();
                 //});
 	        }
@@ -313,7 +311,7 @@ namespace AsyncAwait
 	        }
 
             if(!catched)
-				Debug.WriteLine("dove Ë finita l'eccezione?");
+				Debug.WriteLine("dove √® finita l'eccezione?");
         }
 
         static async void AvoidAsyncVoid()
@@ -345,7 +343,7 @@ namespace AsyncAwait
 
         //quando un metodo async void solleva eccezione questa viene propagata al SynchronizationContext
         //attivo nel momento in cui il metodo async void ha iniziato la sua esecuzione
-        //solitamente Ë quindi possibile gestire queste eccezioni ad un livello pi˘ alto
+        //solitamente √® quindi possibile gestire queste eccezioni ad un livello pi√π alto
         //ad esempio Application.DisptacherUnhandledException per WPF o il middleware UseExceptionHandler per ASP.NET
 
         #endregion
@@ -369,7 +367,7 @@ namespace AsyncAwait
         {
             //richiedere Result significa bloccare in modo sincorono il chiamante in attesa del risultato
             //se SynchronizationContext ammette un singolo thread accade che il thread rimane bloccato in attesa
-            //e non puÚ essere richiamato quando il Task Ë completo 
+            //e non pu√≤ essere richiamato quando il Task √® completo 
 
             var result = DoSomethingAsync().Result;
             //var result = await DoSomethingAsync();
@@ -392,13 +390,13 @@ namespace AsyncAwait
 
         #region ConfigureAwait
 
-        //Ë importante valutare se il contesto Ë importante quando viene eseguita la continuazione oppure no
-        //questo perchË la macchina a stati ha un costo di gestione (circa 100 byte per ogni await)
-        //inoltre una stima plausibile puÚ essere che circa 100 continuazione al secondo possono essere ok per UI thread
-        //di pi˘ comincia ad essere problematico a livello di performance (ad esempio skipped frames)
+        //√® importante valutare se il contesto √® importante quando viene eseguita la continuazione oppure no
+        //questo perch√® la macchina a stati ha un costo di gestione (circa 100 byte per ogni await)
+        //inoltre una stima plausibile pu√≤ essere che circa 100 continuazione al secondo possono essere ok per UI thread
+        //di pi√π comincia ad essere problematico a livello di performance (ad esempio skipped frames)
 
         //se si ha un metodo asincrono che in parte necessita del contesto e in parte no
-        //Ë meglio fare refactoring e splittarlo cosÏ da non usare il contesto dove non necessario
+        //√® meglio fare refactoring e splittarlo cos√¨ da non usare il contesto dove non necessario
 
         [TestMethod]
         public void TestConfigureAwait()
@@ -422,7 +420,7 @@ namespace AsyncAwait
         //WPF
         async void DownloadButton_Click(object sender, EventArgs e)
         {
-            // Attende in modo asincrono UI thread non Ë bloccato
+            // Attende in modo asincrono UI thread non √® bloccato
             await DownloadFileAsync("file.txt");
 
             // viene recuperato il contesto e quindi possiamo aggiornare direttamente la UI
@@ -435,13 +433,13 @@ namespace AsyncAwait
             // utilizziamo HttpClient o simili per fare il download.
             //var fileContent = await DownloadFileContentsAsync(fileName).ConfigureAwait(false);
 
-            // poichË abbiamo usato ConfigureAwait(false), qui non siamo pi˘ nel contesto della UI.
+            // poich√® abbiamo usato ConfigureAwait(false), qui non siamo pi√π nel contesto della UI.
             // Invece stiamo eseguendo su un thread del thread pool
 
             // scrive il file su disco in asincrono
             //await WriteToDiskAsync(fileName, fileContent).ConfigureAwait(false);
 
-            // il secondo ConfigureAwait non Ë necessario ma Ë buona pratica metterlo
+            // il secondo ConfigureAwait non √® necessario ma √® buona pratica metterlo
         }
 
         #endregion
@@ -553,8 +551,8 @@ namespace AsyncAwait
             // a questo punto tutti e 3 i task sono in running
 
             // WhenAll reswtituisce un task che diventa completo quando tutti i task sottesi sono completi
-            // se i task ritornano tutti lo stesso tipo e nessuno fallisce il risultato sar‡ un array
-            // se anche uno solo fallisce task conterr‡ l'eccezione
+            // se i task ritornano tutti lo stesso tipo e nessuno fallisce il risultato sar√† un array
+            // se anche uno solo fallisce task conterr√† l'eccezione
             var result = await Task.WhenAll(tasks);
             result.Output();
         }
@@ -562,7 +560,7 @@ namespace AsyncAwait
         static async Task<string> DownloadAllAsync(HttpClient client, IEnumerable<string> urls)
         {
 	        var downloads = urls.Select(client.GetStringAsync);
-	        // nessun task Ë ancora iniziato perchË la sequenza non Ë ancora stata valutata (lazy)
+	        // nessun task √® ancora iniziato perch√® la sequenza non √® ancora stata valutata (lazy)
 
 	        // tutti i download partono contemporaneamente
 	        Task<string>[] downloadTasks = downloads.ToArray();
@@ -591,9 +589,9 @@ namespace AsyncAwait
         }
 
         //il task ritornato da Task.WhenAny non viene mai completato in stato faulted o canceled
-        //completa sempre con successo e il risultato Ë il task interno che completa per primo
+        //completa sempre con successo e il risultato √® il task interno che completa per primo
         //se il task interno non completa con successo l'eccezione non viene propagata al task esterno
-        //se si vuole osservare l'eccezione Ë necessario awaitare il task interno dopo il suo completamento
+        //se si vuole osservare l'eccezione √® necessario awaitare il task interno dopo il suo completamento
 
         //inoltre occorre considerare che anche quando il primo task completa
         //gli altri vanno cmq avanti nell'esecuzione e sarebbe quindi buona norma cancellarli
@@ -622,9 +620,9 @@ namespace AsyncAwait
 
         #region Exception
 
-        //mettere l'async in questo caso Ë importante perchË in questo modo l'eccezione verr‡
-        //messa all'interno del task (che completer‡ quindi in stato faulted) e non sollevata direttamente
-        //verr‡ valutata quando il taks verr‡ awaitato
+        //mettere l'async in questo caso √® importante perch√® in questo modo l'eccezione verr√†
+        //messa all'interno del task (che completer√† quindi in stato faulted) e non sollevata direttamente
+        //verr√† valutata quando il taks verr√† awaitato
         static async Task<int> ThrowNotImplementedExceptionAsync()
         {
 	        throw new NotImplementedException();
@@ -645,7 +643,7 @@ namespace AsyncAwait
 	        }
 	        catch (Exception ex)
 	        {
-		        // "ex" puÚ essere NotImplementedException oppure InvalidOperationException
+		        // "ex" pu√≤ essere NotImplementedException oppure InvalidOperationException
                 ex.GetType().Output();
 	        }
         }
@@ -694,7 +692,7 @@ namespace AsyncAwait
         }
 
         //processati in ordine di completamento
-        //rispetto alla soluzione precedente Ë molto differente perchË in questo caso
+        //rispetto alla soluzione precedente √® molto differente perch√® in questo caso
         //i task vengono processati in modo concorrente e non uno alla volta
         async Task ProcessTasksByCompletionAsync()
         {
@@ -724,8 +722,8 @@ namespace AsyncAwait
 	        result.Output();
         }
 
-        //se si vuole evitare di processare i task in modo concorrente (perchË ad esempio agiscono su di un oggetto condiviso)
-        //Ë possibile utilizzare un lock asincrono implementato tramite SemaphoreSlim
+        //se si vuole evitare di processare i task in modo concorrente (perch√® ad esempio agiscono su di un oggetto condiviso)
+        //√® possibile utilizzare un lock asincrono implementato tramite SemaphoreSlim
         //oppure in Nito.AsyncEx esiste un extension method che ordina per completamento (utilizza TaskCompletionSource)
         async Task UseOrderByCompletionAsync()
         {
@@ -760,15 +758,15 @@ namespace AsyncAwait
 
         static async Task ReportProgressAsync()
         {
-            //attenzione che il report puÚ avvenire in asincrono (mentre il metodo principale continua l'esecuzione)
-            //quindi Ë meglio utilizzare un tipo immutabile o almeno value type
+            //attenzione che il report pu√≤ avvenire in asincrono (mentre il metodo principale continua l'esecuzione)
+            //quindi √® meglio utilizzare un tipo immutabile o almeno value type
             //come parametro T per evitare che il valore venga modificato dalla continuazione del metodo in asincrono  
             var progress = new Progress<int>(); //implementa IProgress<T>
             progress.ProgressChanged += (sender, p) =>
             {
                 //N.B.: la callback cattura il contesto
-                //sappiamo che quando viene costrutita in questo caso il contesto Ë quello
-                //del Main thread quindi Ë possibile aggiornare l'interfaccia senza incorrere in problemi
+                //sappiamo che quando viene costrutita in questo caso il contesto √® quello
+                //del Main thread quindi √® possibile aggiornare l'interfaccia senza incorrere in problemi
                 //anche se il nostro metodo asincrono invoca la callback di report da un thread di background
                 Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} report progress: {p}");
             };
@@ -797,17 +795,17 @@ namespace AsyncAwait
         #endregion
 
         #region Cancellation
-        //la cancellazione Ë cooperativa quindi significa che un metodo puÚ essere cancellato
+        //la cancellazione √® cooperativa quindi significa che un metodo pu√≤ essere cancellato
         //solo se la sua implementazione lo supporta tramite passaggio di un cancellation token
         
         //esiste una fonte che triggera la cancellazione: CancellationTokenSource
         //esiste il destinatario che viene cancellato: CancellationToken
         
         //il codice cancellato per convenzione solleva OperationCanceledException o una sua derivata
-        //in questo modo il codice che ha richiesto la cancellazione puÚ conoscere che Ë effettivamente stata eseguita
+        //in questo modo il codice che ha richiesto la cancellazione pu√≤ conoscere che √® effettivamente stata eseguita
 
-        //non Ë garantito che il codice venga effettivamente cancellato
-        //l'azione potrebbe gi‡ essere iniziata e terminare con successo (o con eccezione)
+        //non √® garantito che il codice venga effettivamente cancellato
+        //l'azione potrebbe gi√† essere iniziata e terminare con successo (o con eccezione)
         //prima che la cancellazione venga onorata
 
         [TestMethod]
@@ -851,10 +849,10 @@ namespace AsyncAwait
         {
 	        using var cts = new CancellationTokenSource();
 	        var task = CancelableMethodAsync(cts.Token);
-            //a questo punto l'operazione Ë partita
+            //a questo punto l'operazione √® partita
 
-	        //triggero la cancellazione, nella realt‡ sarebbe un'altro punto del codice con un altro metodo
-            //quando una CancellationTokenSource viene cancellata lo Ë per sempre
+	        //triggero la cancellazione, nella realt√† sarebbe un'altro punto del codice con un altro metodo
+            //quando una CancellationTokenSource viene cancellata lo √® per sempre
             //se ne ho bisogno un'altra occorre creare una nuova istanza
 	        cts.Cancel();
 
@@ -862,16 +860,16 @@ namespace AsyncAwait
 	        try
 	        {
 		        await task;
-                //se arrivo qui l'operazione Ë stata completata con successo
+                //se arrivo qui l'operazione √® stata completata con successo
                 //prima che la cancellazione possa intervenire
 	        }
 	        catch (OperationCanceledException)
 	        {
-		        //se arrivo qui l'operazione Ë stata cancellata prima di finire
+		        //se arrivo qui l'operazione √® stata cancellata prima di finire
 	        }
 	        catch (Exception)
 	        {
-		        //se arrivo qui l'operazione Ë fallita per un altro motivo
+		        //se arrivo qui l'operazione √® fallita per un altro motivo
 		        throw;
 	        }
         }
@@ -908,7 +906,7 @@ namespace AsyncAwait
 	        }
         }
 
-        //OK perchË di fatto Ë soltanto passthrough
+        //OK perch√® di fatto √® soltanto passthrough
         static Task<string> GetStringAsync(string url)
         {
             var client = new HttpClient();
@@ -929,7 +927,7 @@ namespace AsyncAwait
 	        return client.GetStringAsync(url);
         }
 
-        //oppure se c'Ë codice che puÚ generare eccezioni
+        //oppure se c'√® codice che pu√≤ generare eccezioni
         public async Task<string> GetStringWithAsyncAwait2()
         {
 	        var client = new HttpClient();
@@ -957,7 +955,6 @@ namespace AsyncAwait
         #region Guidelines
 
         /*
-
         Old                     New                                 Description
         
         task.Wait	            await task	                        Wait/await for a task to complete
@@ -971,7 +968,6 @@ namespace AsyncAwait
         Thread.Sleep	        await Task.Delay	                Wait/await for a period of time
         
         Task constructor	    Task.Run or TaskFactory.StartNew	Create a code-based task
-
         */
 
         #endregion
@@ -999,7 +995,6 @@ namespace AsyncAwait
             
         Func<TArg1, TArg2, TResult>	            (x, y) => { return 6; }	                                TArg1, TArg2	TResult
         Func<TArg1, TArg2, Task<TResult>>	    async (x, y) => { await Task.Yield(); return 6; }	    TArg1, TArg2	TResult
-
         */
 
         #endregion
@@ -1007,9 +1002,9 @@ namespace AsyncAwait
         #region ValueTask
 
         //i ValueTask sono utilizzati in scenari dove un metodo asincrono viene eseguito la maggior parte delle volte (hot path)
-        //in modo sincrono e il comportamento asincrono Ë pi˘ raro
-        //dal nome si capisce che Ë un value type (struct) al contrario di Task che Ë una classe
-        //per quanto riguarda un'app l'utilizzo di Task rimane cmq consigliato, ValueTask puÚ essere una soluzione per ottimazzare
+        //in modo sincrono e il comportamento asincrono √® pi√π raro
+        //dal nome si capisce che √® un value type (struct) al contrario di Task che √® una classe
+        //per quanto riguarda un'app l'utilizzo di Task rimane cmq consigliato, ValueTask pu√≤ essere una soluzione per ottimazzare
         //oppure per chi scrive librerie
 
 		[TestMethod]
@@ -1021,7 +1016,7 @@ namespace AsyncAwait
 	        var result = await CalcualteNumberAsync(value);
 	        result.Output();
 
-            //se occorre fare qualcosa di pi˘ complesso la prima cosa da fare Ë trasformare il ValueTask in un Task
+            //se occorre fare qualcosa di pi√π complesso la prima cosa da fare √® trasformare il ValueTask in un Task
             var task = CalcualteNumberAsync(value).AsTask();
             //... altro lavoro concorrente
             var n1 = await task;
@@ -1033,18 +1028,18 @@ namespace AsyncAwait
 	        int[] results = await Task.WhenAll(task1, task2);
         }
 
-        //Ë possibile implementare un metodo che ritorna un ValueTask in modo normale con async await
+        //√® possibile implementare un metodo che ritorna un ValueTask in modo normale con async await
         public ValueTask<int> CalcualteNumberAsync(int value)
         {
-	        //si puÚ costruire un ValueTask passando un Task come parametro nel suo costruttore
+	        //si pu√≤ costruire un ValueTask passando un Task come parametro nel suo costruttore
             return value > 2 ? new ValueTask<int>(value * 2) : new ValueTask<int>(DoSomethingAsync());
         }
 
-        //N.B. quindi se un metodo ritorna ValueTask la prima cosa che dobbiamo fare Ë chiamare await
+        //N.B. quindi se un metodo ritorna ValueTask la prima cosa che dobbiamo fare √® chiamare await
         //oppure trasformarlo subito in un Task
         //attenzione inoltre che ValueTask<T>.Result o ValueTask<T>.GetAwaiter().GetResult() non sono come quelli di Task
         //non devono essere mai chiamati prima di essere certi che il value task sia completo
-        //su Task bloccano il thread, con ValueTask non Ë detto e quindi il comportamento atteso puÚ stupire
+        //su Task bloccano il thread, con ValueTask non √® detto e quindi il comportamento atteso pu√≤ stupire
 
         #endregion 
 
