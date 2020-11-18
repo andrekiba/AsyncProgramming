@@ -41,8 +41,8 @@ namespace TPL
 					Debug.WriteLine(n);
 
 					//utilizza ParallelLoopState.Stop per fermarlo
-					//poichè l'esecuzione è parallela i numeri dopo il 66
-					//che sono già in fase di processamento continuano l'esecuzione
+					//poichÃ¨ l'esecuzione Ã¨ parallela i numeri dopo il 66
+					//che sono giÃ  in fase di processamento continuano l'esecuzione
 					state.Stop();
 				}
 					
@@ -92,29 +92,28 @@ namespace TPL
 			Debug.WriteLine(result);
 		}
 
-		int ParallelSum(IEnumerable<int> values)
+		static int ParallelSum(IEnumerable<int> values)
 		{
 			object mutex = new object();
 			int result = 0;
 			Parallel.ForEach(source: values,
 				localInit: () => 0, //variabile locale al loop
-				//il body può accedere al valore senza bisogno di sincronizzazione
+				//il body puÃ² accedere al valore senza bisogno di sincronizzazione
 				body: (item, state, localValue) => localValue + item,
 				//questo delegato deve essere protetto
 				localFinally: localValue =>
 				{
-					
 					lock (mutex)
 						result += localValue;
 				});
 			return result;
 		}
 
-		//oppure è decisamente più facile utilizzare PLINQ e tutti gli operatori che mette a disposizione
+		//oppure Ã¨ decisamente piÃ¹ facile utilizzare PLINQ e tutti gli operatori che mette a disposizione
 		//N.B. attenzione che PLINQ tende ad utilizzare tutte le risorse della macchina
-		//mentre Parallel si adatta dinamicamente rispetto alle risorse già utilizzate
+		//mentre Parallel si adatta dinamicamente rispetto alle risorse giÃ  utilizzate
 
-		//generalmente se il loop paralello ptoduce un output è più semplice utilizzare PLINQ
+		//generalmente se il loop paralello produce un output Ã¨ piÃ¹ semplice utilizzare PLINQ
 
 		int ParallelSum1(IEnumerable<int> values)
 		{
@@ -141,7 +140,7 @@ namespace TPL
 			);
 		}
 
-		void ProcessPartialArray(int[] array, int begin, int end)
+		static void ProcessPartialArray(int[] array, int begin, int end)
 		{
 			//cpu bound task
 			Debug.WriteLine(array.Length);

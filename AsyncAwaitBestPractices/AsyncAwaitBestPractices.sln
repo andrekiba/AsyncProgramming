@@ -3,25 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AsyncAwaitBestPractices", "AsyncAwaitBestPractices", "{BD13E149-0D77-40F1-8519-F37D3B02B15C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices", "AsyncAwaitBestPractices\AsyncAwaitBestPractices.csproj", "{8EA2A0A9-B231-4F51-83BE-613262AD9ABB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices", "AsyncAwaitBestPractices\AsyncAwaitBestPractices\AsyncAwaitBestPractices.csproj", "{8EA2A0A9-B231-4F51-83BE-613262AD9ABB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices.MVVM", "AsyncAwaitBestPractices.MVVM\AsyncAwaitBestPractices.MVVM.csproj", "{1FB0B607-3B65-4908-9B48-6D2A40DFA80E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices.MVVM", "AsyncAwaitBestPractices\AsyncAwaitBestPractices.MVVM\AsyncAwaitBestPractices.MVVM.csproj", "{1FB0B607-3B65-4908-9B48-6D2A40DFA80E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices.UnitTests", "AsyncAwaitBestPractices.UnitTests\AsyncAwaitBestPractices.UnitTests.csproj", "{D2BDDE58-CF8C-4730-9C46-7DCB427E6AC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncAwaitBestPractices.UnitTests", "AsyncAwaitBestPractices\AsyncAwaitBestPractices.UnitTests\AsyncAwaitBestPractices.UnitTests.csproj", "{D2BDDE58-CF8C-4730-9C46-7DCB427E6AC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HackerNews", "HackerNews\HackerNews.csproj", "{716AD873-21FB-4063-94F3-7DE17BE6FC42}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HackerNews", "AsyncAwaitBestPractices\HackerNews\HackerNews.csproj", "{716AD873-21FB-4063-94F3-7DE17BE6FC42}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HackerNews.iOS", "HackerNews.iOS\HackerNews.iOS.csproj", "{6F319699-D810-4441-AF9F-4880C6AA2B03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HackerNews.iOS", "AsyncAwaitBestPractices\HackerNews.iOS\HackerNews.iOS.csproj", "{6F319699-D810-4441-AF9F-4880C6AA2B03}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HackerNews.Shared", "HackerNews.Shared\HackerNews.Shared.shproj", "{8551B218-5734-4F5C-9D35-25DB859CCFDE}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HackerNews.Shared", "AsyncAwaitBestPractices\HackerNews.Shared\HackerNews.Shared.shproj", "{8551B218-5734-4F5C-9D35-25DB859CCFDE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HackerNews.Droid", "AsyncAwaitBestPractices\HackNews.Droid\HackerNews.Droid.csproj", "{E419B244-E072-4EAB-B1C7-07886925C217}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HackerNews.Droid", "HackNews.Droid\HackerNews.Droid.csproj", "{E419B244-E072-4EAB-B1C7-07886925C217}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		AsyncAwaitBestPractices\HackerNews.Shared\HackerNews.Shared.projitems*{8551b218-5734-4f5c-9d35-25db859ccfde}*SharedItemsImports = 13
+		HackerNews.Shared\HackerNews.Shared.projitems*{8551b218-5734-4f5c-9d35-25db859ccfde}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
