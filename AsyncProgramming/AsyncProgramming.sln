@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncOOP", "AsyncOOP\AsyncO
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TPL", "TPL\TPL.csproj", "{8AF548EC-AA45-4910-86D4-FF5755B7ED89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncContext", "SyncContext\SyncContext.csproj", "{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		AsyncAwaitBestPractices\HackerNews.Shared\HackerNews.Shared.projitems*{8551b218-5734-4f5c-9d35-25db859ccfde}*SharedItemsImports = 13
@@ -72,6 +74,18 @@ Global
 		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhone.Build.0 = Release|Any CPU
 		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{8AF548EC-AA45-4910-86D4-FF5755B7ED89}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|iPhone.Build.0 = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{E2CDBA6A-8A56-4ABD-99F5-F3A3CA10C87A}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
