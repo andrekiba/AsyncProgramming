@@ -55,7 +55,7 @@ namespace AsyncAwait
 	        
 	        var result = 6;
 
-	        await Task.Delay(TimeSpan.FromSeconds(3));
+	        await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
 	        
 	        Debug.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} incremento risultato di 10");
 	        result += 10;
@@ -143,6 +143,30 @@ namespace AsyncAwait
         #endregion 
 
         #region CPU-bound
+
+        [TestMethod]
+        public async Task Test()
+        {
+	        //faccio cose
+	        
+	        //queste cose le voglio fare su un'altro thread
+	        Task.Run(() =>
+	        {
+		        try
+		        {
+			        Thread.Sleep(1000);
+			        return 1;
+		        }
+		        catch (Exception e)
+		        {
+			        Console.WriteLine(e);
+			        //logger
+			        return 0;
+		        }
+	        });
+	        
+	        //voglio andare avanti ad eseguire questa parte
+        }
 
         [TestMethod]
         public async Task TestCpuBound()
@@ -361,6 +385,8 @@ namespace AsyncAwait
                 //var jsonTask = GetJsonAsync(Google);
                 //var result = jsonTask.Result;
             });
+            
+            //Deadlock().GetAwaiter().GetResult();
         }
 
         static async Task Deadlock()
@@ -368,8 +394,9 @@ namespace AsyncAwait
             //richiedere Result significa bloccare in modo sincorono il chiamante in attesa del risultato
             //se SynchronizationContext ammette un singolo thread accade che il thread rimane bloccato in attesa
             //e non può essere richiamato quando il Task è completo 
-
+            
             var result = DoSomethingAsync().Result;
+            //var result = DoSomethingAsync().GetAwaiter().GetResult();
             //var result = await DoSomethingAsync();
 
             //Task.Delay(TimeSpan.FromSeconds(2)).Wait();
@@ -392,17 +419,43 @@ namespace AsyncAwait
 
         //è importante valutare se il contesto è importante quando viene eseguita la continuazione oppure no
         //questo perchè la macchina a stati ha un costo di gestione (circa 100 byte per ogni await)
-        //inoltre una stima plausibile può essere che circa 100 continuazione al secondo possono essere ok per UI thread
+        //inoltre una stima plausibile può essere che circa 100 continuazioni al secondo possono essere ok per UI thread
         //di più comincia ad essere problematico a livello di performance (ad esempio skipped frames)
 
         //se si ha un metodo asincrono che in parte necessita del contesto e in parte no
         //è meglio fare refactoring e splittarlo così da non usare il contesto dove non necessario
+        
+        //https://devblogs.microsoft.com/dotnet/configureawait-faq/
+        
+        /*
+			object scheduler = SynchronizationContext.Current;
+			if (scheduler is null && TaskScheduler.Current != TaskScheduler.Default)
+			{
+			    scheduler = TaskScheduler.Current;
+			}
+         */
+        
+        /*
+			object scheduler = null;
+			if (continueOnCapturedContext)  <-- N.B.
+			{
+			    scheduler = SynchronizationContext.Current;
+			    if (scheduler is null && TaskScheduler.Current != TaskScheduler.Default)
+			    {
+			        scheduler = TaskScheduler.Current;
+			    }
+			}
+         */
 
         [TestMethod]
         public void TestConfigureAwait()
         {
-            AsyncContext.Run(async () =>
+	        AsyncContext.Run(async () =>
             {
+	            
+	            var httpclient = new HttpClient();
+	            await httpclient.GetStringAsync("google.it");
+
 	            Debug.WriteLine($"SynchronizationContext {SynchronizationContext.Current?.ToString() ?? "null"}");
 
                 await DoSomethingAsync();
@@ -488,6 +541,10 @@ namespace AsyncAwait
         {
 	        public Task<int> GetValueAsync()
 	        {
+		        //implementazione asincrona
+		        //await Task.Delay(100);
+		        //return 42;
+		        
 		        return Task.FromResult(42);
 	        }
 
@@ -533,10 +590,11 @@ namespace AsyncAwait
         public async Task TestComposition()
         {
 	        //await DoOperationsConcurrentlyAsync();
-	        //await DownloadAllAsync(new HttpClient(), new List<string>{ Google, "www.facebook.com"});
+	        //var result = await DownloadAllAsync(new HttpClient(), new List<string>{ Google, "http://www.facebook.com"});
 	        //await GetFirstToRespondAsync();
-	        await GetFirstToRespondMaybeFaultedAsync();
-            //await ObserveAllExceptionsAsync();
+	        //await GetFirstToRespondMaybeFaultedAsync();
+            await ObserveAllExceptionsAsync();
+            //result.Output();
         }
 
         #region All
@@ -548,6 +606,8 @@ namespace AsyncAwait
             tasks[1] = DoSomethingAsync();
             tasks[2] = DoSomethingAsync();
 
+            //var tasks1 = Enumerable.Range(1, 3).Select(n => DoSomethingAsync()).ToList();
+            
             // a questo punto tutti e 3 i task sono in running
 
             // WhenAll reswtituisce un task che diventa completo quando tutti i task sottesi sono completi
@@ -626,6 +686,8 @@ namespace AsyncAwait
         static async Task<int> ThrowNotImplementedExceptionAsync()
         {
 	        throw new NotImplementedException();
+	        //var httpclient = new HttpClient();
+	        //return httpclient.GetStringAsync("");
         }
         static async Task<int> ThrowInvalidOperationExceptionAsync()
         {
@@ -668,6 +730,14 @@ namespace AsyncAwait
         #endregion
 
         #region Process as they complete
+
+        [TestMethod]
+        public async Task AsTehyComplete()
+        {
+	        //await ProcessTasksInOrderAsync();
+	        
+	        await ProcessTasksByCompletionAsync();
+        }
 
         async Task<int> DelayAndReturnAsync(int value)
         {
@@ -816,7 +886,7 @@ namespace AsyncAwait
 
         static async Task Cancellation()
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
            //cts.CancelAfter(TimeSpan.FromSeconds(2));
             var task = Task.Run(() => SlowMethod(cts.Token), cts.Token);
 
@@ -832,9 +902,9 @@ namespace AsyncAwait
 
         static void SlowMethod(CancellationToken cancellationToken)
         {
-            for (var i = 0; i < 200000; i++)
+            for (var i = 0; i < 500000; i++)
             {
-                if (i % 1000 == 0)
+	            if (i % 1000 == 0)
                     cancellationToken.ThrowIfCancellationRequested();
             }
         }
@@ -1006,6 +1076,8 @@ namespace AsyncAwait
         //dal nome si capisce che è un value type (struct) al contrario di Task che è una classe
         //per quanto riguarda un'app l'utilizzo di Task rimane cmq consigliato, ValueTask può essere una soluzione per ottimazzare
         //oppure per chi scrive librerie
+        
+        //https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-va…
 
 		[TestMethod]
 		[DataRow(1)]
@@ -1110,6 +1182,32 @@ namespace AsyncAwait
         } 
 
         #endregion
+        
+        #region IAsyncEnumerable
+        //C# 8, .Net Core 3.1
+
+        [TestMethod]
+        public async Task Stream()
+        {
+	        //Trace.Listeners.Add(new ConsoleTraceListener());
+	        
+	        await foreach (var n in GetNumbers())
+	        {
+		        //Trace.WriteLine(n);
+		        Debug.WriteLine(n);
+	        }
+        }
+
+        static async IAsyncEnumerable<int> GetNumbers()
+        {
+	        foreach (var n in Enumerable.Range(1, 50))
+	        {
+		        await Task.Delay(200);
+		        yield return n;
+	        }
+        }
+
+        #endregion 
     }
 
     internal static class MyAsyncHttpServiceExtensions

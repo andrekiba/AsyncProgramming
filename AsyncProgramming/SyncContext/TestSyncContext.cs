@@ -53,7 +53,7 @@ namespace SyncContext
                     RestOfTheMethod(t.Result);
                 else
                     currentSyncContext.Post(delegate { RestOfTheMethod(t.Result); }, null);
-            });
+            }, TaskScheduler.Default);
         }
 
         [TestMethod]
@@ -134,7 +134,10 @@ namespace SyncContext
                 if (t == null)
                     throw new InvalidOperationException("No task provided.");
 
-                t.ContinueWith(delegate { syncCtx.Complete(); }, TaskScheduler.Default);
+                t.ContinueWith(delegate
+                {
+                    syncCtx.Complete();
+                }, TaskScheduler.Default);
 
                 // Pump continuations and propagate any exceptions
                 syncCtx.RunOnCurrentThread();
